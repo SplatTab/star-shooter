@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://bldvawiwe3ibg"]
+
+[ext_resource type="Script" uid="uid://cuk8nlaarp812" path="res://game/game.gd" id="1_vasa2"]
+[ext_resource type="Texture2D" uid="uid://kktqrw2ik2hy" path="res://game/white_cursors.png" id="2_h7iqs"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_feb5d"]
+atlas = ExtResource("2_h7iqs")
+region = Rect2(296, 232, 16, 16)
+
+[node name="Game" type="Node" unique_id=1260941905]
+script = ExtResource("1_vasa2")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=63376245]
+
+[node name="Crosshair" type="Sprite2D" parent="CanvasLayer" unique_id=800849479]
+texture = SubResource("AtlasTexture_feb5d")
+
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=1761389643]
+offset_right = 40.0
+offset_bottom = 23.0
+text = "Mouse: "

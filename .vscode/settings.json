@@ -1,0 +1,9 @@
+{
+    "godotTools.editorPath.godot4": "c:\\Users\\SplatTab\\Documents\\Godot\\Godot_v4.6.3-stable_win64.exe",
+    "files.exclude": {
+        "**/*.uid": true,
+        "**/*.tmp": true,
+        "**/*.import": true,
+        "**/*.tscn": true // Only opened in godot so exclude but may need to remove this line to fix any tscn issues? (hopefully not)
+    }
+}

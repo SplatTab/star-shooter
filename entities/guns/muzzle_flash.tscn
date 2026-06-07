@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://c85ca6otd2v8x"]
+
+[ext_resource type="Script" uid="uid://bwmi87kal731n" path="res://entities/guns/muzzle_flash.gd" id="1_hroks"]
+
+[sub_resource type="Gradient" id="Gradient_muzzle_core"]
+offsets = PackedFloat32Array(0, 0.35, 0.7345679, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.96, 0.55, 1, 1, 0.34117648, 0.05882353, 1, 0.12156863, 0.019607844, 0, 1)
+
+[sub_resource type="Gradient" id="Gradient_muzzle_bloom"]
+offsets = PackedFloat32Array(0, 0.25, 0.65, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 0.9019608, 0.34901962, 1, 1, 0.25882354, 0.019607844, 1, 0, 0, 0, 1)
+
+[node name="MuzzleFlash" type="Node2D" unique_id=1476006130]
+script = ExtResource("1_hroks")
+
+[node name="CoreFlash" type="CPUParticles2D" parent="." unique_id=161463972]
+z_index = 1
+position = Vector2(-6, 0)
+emitting = false
+amount = 10
+lifetime = 0.045
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 30
+local_coords = true
+draw_order = 1
+spread = 10.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 260.0
+initial_velocity_max = 420.0
+scale_amount_min = 0.4
+scale_amount_max = 1.1
+color = Color(1, 0.9607843, 0.54901963, 1)
+color_ramp = SubResource("Gradient_muzzle_core")
+
+[node name="BloomFlash" type="CPUParticles2D" parent="." unique_id=1311100335]
+z_index = 1
+position = Vector2(-6, 0)
+emitting = false
+amount = 14
+lifetime = 0.08
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 30
+local_coords = true
+draw_order = 1
+spread = 10.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 180.0
+initial_velocity_max = 280.0
+scale_amount_min = 0.4
+scale_amount_max = 1.1
+color = Color(1, 0.9019608, 0.34901962, 1)
+color_ramp = SubResource("Gradient_muzzle_bloom")

@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://bko16k2cnek8n"]
+
+[ext_resource type="Texture2D" uid="uid://bfjxa371v1de0" path="res://entities/guns/shotgun/shotgun.png" id="1_rb7ot"]
+[ext_resource type="Script" uid="uid://dp2wpmv2t2hmo" path="res://entities/guns/base_bullet.gd" id="2_fbmkc"]
+[ext_resource type="PackedScene" uid="uid://d3m8p1q5r7uau" path="res://entities/guns/bullet_impact.tscn" id="3_j5f2n"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rb7ot"]
+atlas = ExtResource("1_rb7ot")
+region = Rect2(84, 0, 3, 1)
+
+[node name="Slug" type="Node2D" unique_id=173579475]
+z_index = -1
+script = ExtResource("2_fbmkc")
+impact_scene = ExtResource("3_j5f2n")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=15315781]
+position = Vector2(1, 0)
+texture = SubResource("AtlasTexture_rb7ot")

@@ -1,0 +1,74 @@
+[gd_scene format=3 uid="uid://dnfps3ebijy0o"]
+
+[ext_resource type="Texture2D" uid="uid://bfjxa371v1de0" path="res://entities/guns/shotgun/shotgun.png" id="1_tv3ik"]
+[ext_resource type="Script" uid="uid://ybmfkp18srkb" path="res://entities/guns/base_gun.gd" id="2_i85yl"]
+[ext_resource type="PackedScene" uid="uid://bko16k2cnek8n" path="res://entities/guns/shotgun/slug.tscn" id="3_3uvof"]
+[ext_resource type="AudioStream" uid="uid://5ca111oovgd" path="res://entities/guns/shotgun/shotgun-shoot.wav" id="4_pl1se"]
+[ext_resource type="PackedScene" uid="uid://c85ca6otd2v8x" path="res://entities/guns/muzzle_flash.tscn" id="5_ecwp8"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mtric"]
+atlas = ExtResource("1_tv3ik")
+region = Rect2(0, 0, 21, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i85yl"]
+atlas = ExtResource("1_tv3ik")
+region = Rect2(21, 0, 21, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3uvof"]
+atlas = ExtResource("1_tv3ik")
+region = Rect2(42, 0, 21, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pl1se"]
+atlas = ExtResource("1_tv3ik")
+region = Rect2(63, 0, 21, 7)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_eyb6c"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mtric")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i85yl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3uvof")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pl1se")
+}],
+"loop": true,
+"name": &"shoot_reload",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3uvof"]
+size = Vector2(10.5, 1)
+
+[node name="Gun" type="AnimatedSprite2D" unique_id=893139447]
+z_index = 1
+sprite_frames = SubResource("SpriteFrames_eyb6c")
+animation = &"shoot_reload"
+offset = Vector2(9, -2)
+script = ExtResource("2_i85yl")
+bullet_scene = ExtResource("3_3uvof")
+
+[node name="FirePoint" type="Area2D" parent="." unique_id=944497596]
+position = Vector2(6, -3)
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FirePoint" unique_id=166431830]
+position = Vector2(5, 0)
+shape = SubResource("RectangleShape2D_3uvof")
+
+[node name="ShootSound" type="AudioStreamPlayer2D" parent="." unique_id=1925574183]
+stream = ExtResource("4_pl1se")
+volume_db = -5.0
+
+[node name="MuzzleFlash" parent="." unique_id=1476006130 instance=ExtResource("5_ecwp8")]
+position = Vector2(19.5, -3)
+
+[connection signal="body_entered" from="FirePoint" to="." method="_set_fire_point_blocked" unbinds=1 binds= [true]]
+[connection signal="body_exited" from="FirePoint" to="." method="_set_fire_point_blocked" unbinds=1 binds= [false]]
+
+[editable path="MuzzleFlash"]
