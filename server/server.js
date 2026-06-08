@@ -20,7 +20,6 @@ const STR_ONLY_HOST_CAN_SEAL = 'Only host can seal the lobby';
 const STR_SEAL_COMPLETE = 'Seal complete';
 const STR_TOO_MANY_LOBBIES = 'Too many lobbies open, disconnecting';
 const STR_ALREADY_IN_LOBBY = 'Already in a lobby';
-const STR_LOBBY_DOES_NOT_EXISTS = 'Lobby does not exists';
 const STR_LOBBY_IS_SEALED = 'Lobby is sealed';
 const STR_INVALID_FORMAT = 'Invalid message format';
 const STR_NEED_LOBBY = 'Invalid message when not in a lobby';
@@ -39,6 +38,7 @@ const CMD = {
 	ANSWER: 5, // eslint-disable-line sort-keys
 	CANDIDATE: 6, // eslint-disable-line sort-keys
 	SEAL: 7, // eslint-disable-line sort-keys
+	MIGRATE_HOST: 8, // eslint-disable-line sort-keys
 };
 
 function randomInt(low, high) {
@@ -127,6 +127,13 @@ class Lobby {
 		this.peers.push(peer);
 	}
 
+	find_new_host() {
+		if (this.peers.length === 0) {
+			return -1;
+		}
+		return this.peers[1];
+	}
+
 	leave(peer) {
 		const idx = this.peers.findIndex((p) => peer === p);
 		if (idx === -1) {
@@ -134,9 +141,11 @@ class Lobby {
 		}
 		const assigned = this.getPeerId(peer);
 		const close = assigned === 1;
+		const newLobby = randomSecret();
+
 		this.peers.forEach((p) => {
 			if (close) { // Room host disconnected, must close.
-				p.ws.close(4000, STR_HOST_DISCONNECTED);
+				p.ws.send(ProtoMessage(CMD.MIGRATE_HOST, 1, newLobby));
 			} else { // Notify peer disconnect.
 				p.ws.send(ProtoMessage(CMD.PEER_DISCONNECT, assigned));
 			}
@@ -180,17 +189,6 @@ function joinLobby(peer, pLobby, mesh) {
 		throw new ProtoError(4000, STR_ALREADY_IN_LOBBY);
 	}
 
-	// Empty name hosts a new lobby
-	if (lobbyName === '') {
-		if (lobbies.size >= MAX_LOBBIES) {
-			throw new ProtoError(4000, STR_TOO_MANY_LOBBIES);
-		}
-		lobbyName = randomSecret();
-		lobbies.set(lobbyName, new Lobby(lobbyName, peer.id, mesh));
-		console.log(`Peer ${peer.id} created lobby ${lobbyName}`);
-		console.log(`Open lobbies: ${lobbies.size}`);
-	}
-
 	// Quick play joins an open lobby if possible, otherwise creates a new one.
 	if (lobbyName === 'quickPlay') {
 		// Peer must not already be in a lobby
@@ -199,21 +197,29 @@ function joinLobby(peer, pLobby, mesh) {
 		if (openLobby) {
 			lobbyName = openLobby[0];
 		}
+		// If no open lobby then lobby name is still quickPlay
 		if (lobbyName === 'quickPlay') {
 			if (lobbies.size >= MAX_LOBBIES) {
 				throw new ProtoError(4000, STR_TOO_MANY_LOBBIES);
 			}
-			lobbyName = randomSecret();
-			lobbies.set(lobbyName, new Lobby(lobbyName, peer.id, mesh));
-			console.log(`Peer ${peer.id} created lobby ${lobbyName}`);
-			console.log(`Open lobbies: ${lobbies.size}`);
+			lobbyName = '';
 		}
 	}
 
-	const lobby = lobbies.get(lobbyName);
-	if (!lobby) {
-		throw new ProtoError(4000, STR_LOBBY_DOES_NOT_EXISTS);
+	// Either no lobbies so making one or players migrating to new lobby after host left, so making new lobby for them to join.
+	if (lobbyName === '') {
+		lobbyName = randomSecret();
+	} else if (!lobbies.has(lobbyName)) {
+		if (lobbies.size >= MAX_LOBBIES) {
+			throw new ProtoError(4000, STR_TOO_MANY_LOBBIES);
+		}
+		lobbies.set(lobbyName, new Lobby(lobbyName, peer.id, mesh));
+		console.log(`Peer ${peer.id} created lobby ${lobbyName}`);
+		console.log(`Open lobbies: ${lobbies.size}`);
 	}
+
+	const lobby = lobbies.get(lobbyName);
+
 	if (lobby.sealed) {
 		throw new ProtoError(4000, STR_LOBBY_IS_SEALED);
 	}

@@ -13,31 +13,8 @@ zoom = Vector2(2, 2)
 spawn_path = NodePath("..")
 
 [node name="MultiplayerManager" type="Node" parent="." unique_id=629324622]
+process_mode = 3
 script = ExtResource("1_ubfh8")
-
-[node name="QuickPlay" type="Button" parent="MultiplayerManager" unique_id=1373728084]
-visible = false
-offset_left = -159.0
-offset_top = -88.0
-offset_right = -74.0
-offset_bottom = -57.0
-text = "QuickPlay"
-
-[node name="HostLobby" type="Button" parent="MultiplayerManager" unique_id=1255208442]
-visible = false
-offset_left = -158.0
-offset_top = -56.0
-offset_right = -112.0
-offset_bottom = -25.0
-text = "HostGame"
-
-[node name="Disconnect" type="Button" parent="MultiplayerManager" unique_id=641847877]
-visible = false
-offset_left = -159.0
-offset_top = -24.0
-offset_right = -65.0
-offset_bottom = 7.0
-text = "Disconnect"
 
 [node name="Floor" type="TileMapLayer" parent="." unique_id=1766856629]
 z_index = -20
@@ -56,7 +33,3 @@ tile_set = ExtResource("2_444vf")
 z_index = 1
 tile_map_data = PackedByteArray("AAAGAAIAAAAPAAUAAAAGAAMAAAAPAAYAAAAGAAQAAAAPAAcAAAAGAPz/AAAAAAMAAAAPAAQAAAAPAAUAAAAPAAUAAAAPAAYAAAAPAAYAAAAPAAcAAAAOAAEAAAAPAAUAAAAOAAIAAAAPAAYAAAAOAAMAAAAPAAcAAAAPAPz/AAAPAAUAAAAPAP3/AAAPAAYAAAAPAP7/AAAPAAcAAAAGAPv/AAAAAAAAAAA=")
 tile_set = ExtResource("2_444vf")
-
-[connection signal="pressed" from="MultiplayerManager/QuickPlay" to="MultiplayerManager" method="_on_quick_play_pressed"]
-[connection signal="pressed" from="MultiplayerManager/HostLobby" to="MultiplayerManager" method="_on_host_lobby_pressed"]
-[connection signal="pressed" from="MultiplayerManager/Disconnect" to="MultiplayerManager" method="_on_disconnect_pressed"]

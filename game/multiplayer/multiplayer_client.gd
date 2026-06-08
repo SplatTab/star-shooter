@@ -1,5 +1,6 @@
 extends "ws_webrtc_client.gd"
 
+const host := "ws://localhost:9081"
 var rtc_mp := WebRTCMultiplayerPeer.new()
 var sealed: bool = false
 
@@ -17,7 +18,7 @@ func _init() -> void:
 	peer_disconnected.connect(_peer_disconnected)
 
 
-func start(url: String, _lobby: String = "", _mesh: bool = true) -> void:
+func start(_lobby: String = "", url: String = host, _mesh: bool = true) -> void:
 	stop()
 	sealed = false
 	mesh = _mesh
