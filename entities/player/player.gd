@@ -2,16 +2,6 @@ extends CharacterBody2D
 
 
 const SPEED = 100 
-const JUMP_HEIGHT = 25
-const JUMP_COOLDOWN = 0.2
-const TIME_TO_JUMP = .2
-const JUMP_ANTICIPATION_TIME = 0.05
-const JUMP_STRETCH_TIME = 0.07
-const LAND_RECOVERY_TIME = 0.06
-const JUMP_SQUASH_SCALE = Vector2(1.12, 0.88)
-const JUMP_STRETCH_SCALE = Vector2(0.88, 1.12)
-const LAND_SQUASH_SCALE = Vector2(1.35, 0.8)
-const GRAVITY = (2 * JUMP_HEIGHT) / pow(TIME_TO_JUMP, 2)
 var hp = 4
 var speed : float = SPEED
 var is_stunned: bool = false
@@ -22,6 +12,7 @@ var is_dead: bool = false
 @onready var hand: Sprite2D = $Hand
 @onready var hit_sound: AudioStreamPlayer2D = $HitSound
 @onready var blood_particles: CPUParticles2D = $BloodParticles
+@onready var walking_particles: CPUParticles2D = $WalkingParticles
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
@@ -84,10 +75,12 @@ func _physics_process(_delta: float) -> void:
 		var desired_animation = "idle"
 
 		if direction:
+			walking_particles.emitting = true
 			desired_animation = "walk_ad" if diry == 0 else "walk_s" if diry > 0 else "walk_w"
 			velocity = direction * speed
 			sprite.flip_h = dirx < 0 
 		else:
+			walking_particles.emitting = false
 			velocity.x = move_toward(velocity.x, 0, speed)
 			velocity.y = move_toward(velocity.y, 0, speed)
 		
