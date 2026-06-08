@@ -29,7 +29,7 @@ signal peer_disconnected(id: int)
 signal offer_received(id: int, offer: String)
 signal answer_received(id: int, answer: String)
 signal candidate_received(id: int, mid: String, index: int, sdp: String)
-signal migrate_host(id: int, newLobby: String)
+signal migrate_host(newLobby: String)
 signal lobby_sealed()
 
 
@@ -97,7 +97,7 @@ func _parse_msg() -> bool:
 			return false
 		candidate_received.emit(src_id, candidate[0], candidate[1].to_int(), candidate[2])
 	elif type == Message.MIGRATE_HOST:
-		migrate_host.emit(src_id, msg.data)
+		migrate_host.emit(msg.data)
 	else:
 		return false
 

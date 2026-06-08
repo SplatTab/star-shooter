@@ -59,24 +59,25 @@ func _connected(id: int, use_mesh: bool) -> void:
 		if old_player:
 			old_player.set_multiplayer_authority(id)
 			old_player.name = str(id)
+			old_player.process_mode = Node.PROCESS_MODE_INHERIT
+			current_id = id
 			return
 	add_player(id)
 	current_id = id
 
-func _migrate_host(id: int, newLobby: String) -> void:
+func _migrate_host(newLobby: String) -> void:
 	#Get rid of all players thats not their own since they will be re-added when they join the new lobby
 	for player in get_tree().current_scene.get_children():
 		if not player is Player:
 			continue
 			
-		if not player.is_multiplayer_authority():
+		if player.is_multiplayer_authority():
+			player.process_mode = Node.PROCESS_MODE_DISABLED
+		else:
 			player.queue_free()
 	print("Host migrating to lobby %s old id is: %d" % [newLobby, current_id])
-	get_tree().current_scene.process_mode = Node.PROCESS_MODE_DISABLED
 	MultiplayerClient.stop()
 	MultiplayerClient.start(newLobby)
-
-	get_tree().current_scene.process_mode = Node.PROCESS_MODE_INHERIT
 
 func _disconnected() -> void:
 	_log("[Signaling] Server disconnected: %d - %s" % [MultiplayerClient.code, MultiplayerClient.reason])

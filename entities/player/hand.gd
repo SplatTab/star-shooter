@@ -40,7 +40,7 @@ func move_hand(mouse_global: Vector2) -> void:
 	global_position = player.global_position + hip_offset.rotated(player.global_rotation)
 
 func _process(_delta: float) -> void:
-	if not player or not player.is_multiplayer_authority():
+	if not multiplayer.multiplayer_peer or not player.is_multiplayer_authority():
 		return
 
 	move_hand(Game.get_world_crosshair_position())

@@ -6,7 +6,13 @@ extends Node2D
 @export var damage: int = 1
 @export var knockback: float = 150
 @export var bullet_speed: float = 500
+@export var lifetime: float = 5.0
 var owner_id: int = -1
+
+func _ready() -> void:
+	get_tree().create_timer(lifetime).timeout.connect(func() -> void:\
+		pop(global_position)
+	)
 	
 func pop(hit_pos: Vector2) -> void:
 	if impact_scene:

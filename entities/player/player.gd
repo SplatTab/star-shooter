@@ -17,7 +17,6 @@ func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
 
 func _ready():
-	blood_particles.emitting = true
 	if is_multiplayer_authority():
 		get_viewport().get_camera_2d().reparent(self)
 
@@ -78,7 +77,7 @@ func create_ghost() -> void:
 	)
 
 func _physics_process(_delta: float) -> void:
-	if not is_multiplayer_authority():
+	if not multiplayer.multiplayer_peer or not is_multiplayer_authority():
 		return  # Only process input on the authoritative instance
 	if is_dead: return
 	var dirx := Input.get_axis("left", "right")
