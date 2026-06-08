@@ -28,4 +28,9 @@ func _input(event: InputEvent) -> void:
 		virtual_crosshair_position.x = clamp(virtual_crosshair_position.x, 0, screen_size.x)
 		virtual_crosshair_position.y = clamp(virtual_crosshair_position.y, 0, screen_size.y)
 
-		crosshair.global_position = virtual_crosshair_position
+		crosshair.global_position = Vector2(virtual_crosshair_position.x, virtual_crosshair_position.y)
+
+func _physics_process(_delta: float) -> void:
+	if not multiplayer.multiplayer_peer:
+		return
+	label.text = "FPS: %d\nPlayers: %d Is Host?: %s My Remote Id: %d" % [Engine.get_frames_per_second(), multiplayer.get_peers().size(), multiplayer.is_server(), multiplayer.get_unique_id()]

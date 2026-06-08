@@ -25,7 +25,7 @@ func scale_gun(side) -> void:
 
 func move_hand(mouse_global: Vector2) -> void:
 	# Keep hand close to hip and avoid rapid left/right flips near center
-	var relative_mouse := Vector2(mouse_global - player.global_position).rotated(-player.global_rotation)
+	var relative_mouse := Vector2(mouse_global - player.global_position)
 	rotation = atan2(relative_mouse.y, relative_mouse.x)
 	var side := last_hand_side
 	if abs(relative_mouse.x) > HAND_DEADZONE_X:

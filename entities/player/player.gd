@@ -5,8 +5,7 @@ const SPEED = 100
 var hp = 4
 var speed : float = SPEED
 var is_stunned: bool = false
-var can_jump: bool = false
-var is_jumping: bool = false
+var is_dashing: bool = false
 var is_dead: bool = false
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hand: Sprite2D = $Hand
@@ -36,6 +35,7 @@ func die() -> void:
 	# Global.hud.death_screen()
 
 func knockback_and_stun(knockback: Vector2, stun_color: Color = Color.WHITE) -> void:
+	if is_stunned: return
 	is_stunned = true
 	if knockback:
 		velocity = knockback
@@ -63,6 +63,20 @@ func hurt(damage: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	
 	return
 
+@rpc("any_peer", "call_local", "reliable")
+func create_ghost() -> void:
+	var ghost = sprite.duplicate() as AnimatedSprite2D
+	ghost.position = position
+	ghost.modulate = Color(1, 1, 1, 0.5)
+	get_parent().add_child(ghost)
+	ghost.pause()
+	ghost.animation = sprite.animation
+	ghost.frame = sprite.frame
+	ghost.flip_h = sprite.flip_h
+	get_tree().create_timer(0.3).timeout.connect(func() -> void:
+		ghost.queue_free()
+	)
+
 func _physics_process(_delta: float) -> void:
 	if not is_multiplayer_authority():
 		return  # Only process input on the authoritative instance
@@ -70,14 +84,22 @@ func _physics_process(_delta: float) -> void:
 	var dirx := Input.get_axis("left", "right")
 	var diry := Input.get_axis("up", "down")
 	var direction = Vector2(dirx, diry).normalized()
+	var do_dash = Input.is_action_just_pressed("dash")
+	if is_dashing:
+		create_ghost.rpc()
 
-	if not is_stunned and not is_jumping:
+	if not is_stunned:
 		var desired_animation = "idle"
 
 		if direction:
 			walking_particles.emitting = true
 			desired_animation = "walk_ad" if diry == 0 else "walk_s" if diry > 0 else "walk_w"
-			velocity = direction * speed
+			if do_dash:
+				is_dashing = true
+				knockback_and_stun(direction * speed * 3, Color(1, 1, 0.5))
+			else:
+				is_dashing = false
+				velocity = direction * speed
 			sprite.flip_h = dirx < 0 
 		else:
 			walking_particles.emitting = false

@@ -16,6 +16,7 @@ spawn_path = NodePath("..")
 script = ExtResource("1_ubfh8")
 
 [node name="QuickPlay" type="Button" parent="MultiplayerManager" unique_id=1373728084]
+visible = false
 offset_left = -159.0
 offset_top = -88.0
 offset_right = -74.0
@@ -23,6 +24,7 @@ offset_bottom = -57.0
 text = "QuickPlay"
 
 [node name="HostLobby" type="Button" parent="MultiplayerManager" unique_id=1255208442]
+visible = false
 offset_left = -158.0
 offset_top = -56.0
 offset_right = -112.0
@@ -30,6 +32,7 @@ offset_bottom = -25.0
 text = "HostGame"
 
 [node name="Disconnect" type="Button" parent="MultiplayerManager" unique_id=641847877]
+visible = false
 offset_left = -159.0
 offset_top = -24.0
 offset_right = -65.0

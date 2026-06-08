@@ -18,4 +18,3 @@ texture = SubResource("AtlasTexture_feb5d")
 [node name="Label" type="Label" parent="CanvasLayer" unique_id=1761389643]
 offset_right = 40.0
 offset_bottom = 23.0
-text = "Mouse: "
