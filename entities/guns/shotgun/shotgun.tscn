@@ -6,10 +6,6 @@
 [ext_resource type="AudioStream" uid="uid://5ca111oovgd" path="res://entities/guns/shotgun/shotgun-shoot.wav" id="4_pl1se"]
 [ext_resource type="PackedScene" uid="uid://c85ca6otd2v8x" path="res://entities/guns/muzzle_flash.tscn" id="5_ecwp8"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_mtric"]
-atlas = ExtResource("1_tv3ik")
-region = Rect2(0, 0, 21, 7)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_i85yl"]
 atlas = ExtResource("1_tv3ik")
 region = Rect2(21, 0, 21, 7)
@@ -22,13 +18,18 @@ region = Rect2(42, 0, 21, 7)
 atlas = ExtResource("1_tv3ik")
 region = Rect2(63, 0, 21, 7)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_ecwp8"]
+atlas = ExtResource("1_tv3ik")
+region = Rect2(42, 0, 21, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mtric"]
+atlas = ExtResource("1_tv3ik")
+region = Rect2(0, 0, 21, 7)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_eyb6c"]
 animations = [{
 "frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_mtric")
-}, {
-"duration": 1.0,
+"duration": 1.2,
 "texture": SubResource("AtlasTexture_i85yl")
 }, {
 "duration": 1.0,
@@ -36,10 +37,16 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_pl1se")
+}, {
+"duration": 0.9,
+"texture": SubResource("AtlasTexture_ecwp8")
+}, {
+"duration": 0.9,
+"texture": SubResource("AtlasTexture_mtric")
 }],
-"loop": true,
+"loop": false,
 "name": &"shoot_reload",
-"speed": 5.0
+"speed": 10.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3uvof"]
@@ -49,6 +56,8 @@ size = Vector2(10.5, 1)
 z_index = 1
 sprite_frames = SubResource("SpriteFrames_eyb6c")
 animation = &"shoot_reload"
+frame = 4
+frame_progress = 1.0
 offset = Vector2(9, -2)
 script = ExtResource("2_i85yl")
 bullet_scene = ExtResource("3_3uvof")

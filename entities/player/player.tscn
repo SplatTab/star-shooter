@@ -187,6 +187,7 @@ current_gun = NodePath("Gun")
 [node name="Shadow" type="Sprite2D" parent="." unique_id=811989388]
 show_behind_parent = true
 visibility_layer = 2
+z_index = -2
 texture_filter = 1
 texture = ExtResource("4_bls4j")
 

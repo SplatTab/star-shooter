@@ -24,6 +24,7 @@ func spawn_bullet() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func shoot_visuals() -> void:
+	play("shoot_reload")
 	shoot_sound.play()
 	muzzle_flash.flash()
 
