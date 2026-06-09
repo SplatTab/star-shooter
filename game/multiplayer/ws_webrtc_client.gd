@@ -37,7 +37,7 @@ func connect_to_url(url: String) -> void:
 	close()
 	code = 1000
 	reason = "Unknown"
-	ws.connect_to_url(url)
+	ws.connect_to_url(url, TLSOptions.client_unsafe())
 
 
 func close() -> void:

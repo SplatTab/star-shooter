@@ -1,6 +1,6 @@
 extends "ws_webrtc_client.gd"
 
-const host := "ws://localhost:9081"
+const host := "wss://localhost:9081"
 var rtc_mp := WebRTCMultiplayerPeer.new()
 var sealed: bool = false
 
