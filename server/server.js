@@ -1,5 +1,7 @@
 // Server code from godot demo https://github.com/godotengine/godot-demo-projects/tree/master/networking/webrtc_signaling
 
+const https = require('https');
+const fs = require('fs');
 const WebSocket = require('ws');
 const crypto = require('crypto');
 
@@ -15,7 +17,6 @@ const SEAL_CLOSE_TIMEOUT = 10000;
 const PING_INTERVAL = 10000;
 
 const STR_NO_LOBBY = 'Have not joined lobby yet';
-const STR_HOST_DISCONNECTED = 'Room host has disconnected';
 const STR_ONLY_HOST_CAN_SEAL = 'Only host can seal the lobby';
 const STR_SEAL_COMPLETE = 'Seal complete';
 const STR_TOO_MANY_LOBBIES = 'Too many lobbies open, disconnecting';
@@ -65,7 +66,18 @@ function ProtoMessage(type, id, data) {
 	});
 }
 
-const wss = new WebSocket.Server({ port: PORT });
+const options = {
+	key: fs.readFileSync('key.pem'),
+	cert: fs.readFileSync('cert.pem'),
+};
+
+const server = https.createServer(options, (req, res) => {
+	res.writeHead(200, { 'Content-Type': 'text/plain' });
+	res.end('Hello WebRTC Server\n');
+});
+
+const wss = new WebSocket.Server({ server });
+server.listen(9081);
 
 wss.on('listening', () => {
 	console.log(`WebSocket signaling server listening on port ${PORT}`);
