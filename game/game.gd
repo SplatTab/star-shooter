@@ -4,6 +4,7 @@ extends Node
 @onready var virtual_crosshair_position: Vector2 = get_viewport().get_visible_rect().size * 0.5
 @onready var crosshair: Sprite2D = $CanvasLayer/Crosshair
 @onready var label: Label = $CanvasLayer/Label
+var spawn_points: SpawnPoints
 
 func get_world_crosshair_position() -> Vector2:
 	return get_viewport().get_canvas_transform().affine_inverse() * virtual_crosshair_position
@@ -16,7 +17,7 @@ func _input(event: InputEvent) -> void:
 	# Capture mouse when the window is clicked
 	elif event is InputEventMouseButton and event.pressed:
 		if Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 
 	if Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
 		return  # Don't move hand if mouse isn't captured

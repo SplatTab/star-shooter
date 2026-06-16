@@ -230,6 +230,7 @@ color = Color(0.55632406, 0.47611272, 0.46982336, 1)
 [node name="HitSound" type="AudioStreamPlayer2D" parent="." unique_id=963128839]
 stream = ExtResource("5_fkugw")
 volume_db = 10.0
+max_distance = 400.0
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1257775295]
 replication_config = SubResource("SceneReplicationConfig_8fjmc")

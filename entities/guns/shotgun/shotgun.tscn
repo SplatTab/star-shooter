@@ -73,6 +73,7 @@ shape = SubResource("RectangleShape2D_3uvof")
 [node name="ShootSound" type="AudioStreamPlayer2D" parent="." unique_id=1925574183]
 stream = ExtResource("4_pl1se")
 volume_db = -5.0
+max_distance = 400.0
 
 [node name="MuzzleFlash" parent="." unique_id=1476006130 instance=ExtResource("5_ecwp8")]
 position = Vector2(19.5, -3)

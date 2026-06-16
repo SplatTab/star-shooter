@@ -1,7 +1,6 @@
 // Server code from godot demo https://github.com/godotengine/godot-demo-projects/tree/master/networking/webrtc_signaling
 
-const https = require('https');
-const fs = require('fs');
+const http = require('http');
 const WebSocket = require('ws');
 const crypto = require('crypto');
 
@@ -66,18 +65,13 @@ function ProtoMessage(type, id, data) {
 	});
 }
 
-const options = {
-	key: fs.readFileSync('key.pem'),
-	cert: fs.readFileSync('cert.pem'),
-};
-
-const server = https.createServer(options, (req, res) => {
+const server = http.createServer((req, res) => {
 	res.writeHead(200, { 'Content-Type': 'text/plain' });
 	res.end('Hello WebRTC Server\n');
 });
 
 const wss = new WebSocket.Server({ server });
-server.listen(9081);
+server.listen(9081, '127.0.0.1');
 
 wss.on('listening', () => {
 	console.log(`WebSocket signaling server listening on port ${PORT}`);
@@ -203,25 +197,21 @@ function joinLobby(peer, pLobby, mesh) {
 
 	// Quick play joins an open lobby if possible, otherwise creates a new one.
 	if (lobbyName === 'quickPlay') {
+		lobbyName = '';
 		// Peer must not already be in a lobby
 		const openLobby = Array.from(lobbies.entries())
 			.find(([, lobby]) => !lobby.sealed && lobby.peers.length < MAX_PEERS);
 		if (openLobby) {
 			lobbyName = openLobby[0];
 		}
-		// If no open lobby then lobby name is still quickPlay
-		if (lobbyName === 'quickPlay') {
-			if (lobbies.size >= MAX_LOBBIES) {
-				throw new ProtoError(4000, STR_TOO_MANY_LOBBIES);
-			}
-			lobbyName = '';
-		}
 	}
 
 	// Either no lobbies so making one or players migrating to new lobby after host left, so making new lobby for them to join.
 	if (lobbyName === '') {
 		lobbyName = randomSecret();
-	} else if (!lobbies.has(lobbyName)) {
+	}
+
+	if (!lobbies.has(lobbyName)) {
 		if (lobbies.size >= MAX_LOBBIES) {
 			throw new ProtoError(4000, STR_TOO_MANY_LOBBIES);
 		}

@@ -14,7 +14,7 @@
     "eslint-plugin-import": "^2.32.0"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.js && caddy run --config Caddyfile",
     "lint": "eslint server.js && echo \"Lint OK\" && exit 0",
     "format": "eslint server.js --fix && echo \"Lint OK\" && exit 0"
   },

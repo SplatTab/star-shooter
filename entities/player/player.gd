@@ -19,19 +19,14 @@ func _enter_tree() -> void:
 func _ready():
 	if is_multiplayer_authority():
 		get_viewport().get_camera_2d().reparent(self)
+		global_position = Game.spawn_points.get_random_spawn()
 
 func die() -> void:
+	global_position = Game.spawn_points.get_random_spawn()
+	velocity = Vector2.ZERO
+	hp = 4
+	is_dead = false
 	pass
-	# remove_from_group("players")
-	# is_dead = true
-	# hand.visible = false # Hide hand when player dies
-	# sprite.play("death")
-	# blood_particles.emitting = true
-	# blood_particles.one_shot = false
-	# blood_particles.position = Vector2(0, 5)
-	# hand.visible = false
-	# hand.process_mode = Node.PROCESS_MODE_DISABLED
-	# Global.hud.death_screen()
 
 func knockback_and_stun(knockback: Vector2, stun_color: Color = Color.WHITE) -> void:
 	if is_stunned: return

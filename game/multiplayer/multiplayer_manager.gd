@@ -16,7 +16,7 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(_mp_server_disconnect)
 	multiplayer.peer_connected.connect(_mp_peer_connected)
 	multiplayer.peer_disconnected.connect(_mp_peer_disconnected)
-	MultiplayerClient.start("test")
+	MultiplayerClient.start("quickPlay")
 
 func remove_player(id: int):
 	var player_node = get_tree().current_scene.get_node_or_null(str(id))
