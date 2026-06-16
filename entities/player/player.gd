@@ -2,7 +2,8 @@ class_name Player
 extends CharacterBody2D
 
 const SPEED = 100 
-var hp = 4
+const BASE_HP = 100
+var hp = BASE_HP
 var speed : float = SPEED
 var is_stunned: bool = false
 var is_dashing: bool = false
@@ -12,6 +13,7 @@ var is_dead: bool = false
 @onready var hit_sound: AudioStreamPlayer2D = $HitSound
 @onready var blood_particles: CPUParticles2D = $BloodParticles
 @onready var walking_particles: CPUParticles2D = $WalkingParticles
+@onready var damage_label: PackedScene = preload("res://entities/player/damage_label.tscn")
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
@@ -20,13 +22,14 @@ func _ready():
 	if is_multiplayer_authority():
 		get_viewport().get_camera_2d().reparent(self)
 		global_position = Game.spawn_points.get_random_spawn()
+		Game.init_health_bar(hp)
 
 func die() -> void:
 	global_position = Game.spawn_points.get_random_spawn()
 	velocity = Vector2.ZERO
-	hp = 4
+	hp = BASE_HP
+	Game.update_health_bar(hp)
 	is_dead = false
-	pass
 
 func knockback_and_stun(knockback: Vector2, stun_color: Color = Color.WHITE) -> void:
 	if is_stunned: return
@@ -41,6 +44,12 @@ func knockback_and_stun(knockback: Vector2, stun_color: Color = Color.WHITE) -> 
 		is_stunned = false
 	)
 
+func hit_label(amount: int) -> void:
+	var label = damage_label.instantiate() as Node2D
+	label.get_node("Label").text = str(amount)
+	label.global_position = global_position
+	get_tree().current_scene.add_child(label)
+	get_tree().create_timer(0.5).timeout.connect(label.queue_free)
 
 @rpc("any_peer", "call_local", "reliable")
 func hurt(damage: int, knockback: Vector2 = Vector2.ZERO) -> void:
@@ -48,13 +57,16 @@ func hurt(damage: int, knockback: Vector2 = Vector2.ZERO) -> void:
 
 	if damage > 0:
 		hp -= damage
+		hit_label(damage)
 		hit_sound.play()
-		if hp <= 0 and not is_dead:
-			die()
 		blood_particles.emitting = true
 
+
 	knockback_and_stun(knockback, Color(1, 0.5, 0.5))
-	
+	if multiplayer.multiplayer_peer and is_multiplayer_authority():
+		if hp <= 0 and not is_dead:
+			die()
+		Game.update_health_bar(hp)
 	return
 
 @rpc("any_peer", "call_local", "reliable")

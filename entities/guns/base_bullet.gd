@@ -6,11 +6,16 @@ extends Node2D
 @export var damage: int = 1
 @export var knockback: float = 150
 @export var bullet_speed: float = 500
+@export var damage_falloff_start: float = 25
+@export var damage_falloff_end: float = 250
+@export var damage_falloff_multiplier: float = .8
 @export var lifetime: float = 5.0
+var initial_position: Vector2
 var owner_id: int = -1
 
 func _ready() -> void:
-	get_tree().create_timer(lifetime).timeout.connect(func() -> void:\
+	initial_position = global_position
+	get_tree().create_timer(lifetime).timeout.connect(func() -> void:
 		pop(global_position)
 	)
 	
@@ -47,6 +52,14 @@ func _physics_process(delta: float) -> void:
 	var result = space_state.intersect_ray(query)
 	
 	if result:
+		var distance = initial_position.distance_to(result.position)
+		if distance > damage_falloff_start:
+			var falloff_range = damage_falloff_end - damage_falloff_start
+			var excess_distance = min(distance - damage_falloff_start, falloff_range)
+			var falloff_factor = 1.0 - (excess_distance / falloff_range) * damage_falloff_multiplier
+			damage = int(damage * falloff_factor)
+
+			damage = max(damage, 1)
 
 		global_position = result.position # Snaps the bullet to the impact point
 		handle_hit(result.collider)

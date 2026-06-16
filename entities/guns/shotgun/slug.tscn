@@ -12,6 +12,7 @@ region = Rect2(84, 0, 3, 1)
 z_index = -1
 script = ExtResource("2_fbmkc")
 impact_scene = ExtResource("3_j5f2n")
+damage = 75
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=15315781]
 position = Vector2(1, 0)

@@ -2,10 +2,28 @@
 
 [ext_resource type="Script" uid="uid://cuk8nlaarp812" path="res://game/game.gd" id="1_vasa2"]
 [ext_resource type="Texture2D" uid="uid://kktqrw2ik2hy" path="res://game/white_cursors.png" id="2_h7iqs"]
+[ext_resource type="FontFile" uid="uid://c0lxwwj8m6jpl" path="res://editundo.ttf" id="3_h7iqs"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_feb5d"]
 atlas = ExtResource("2_h7iqs")
 region = Rect2(296, 232, 16, 16)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vasa2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h7iqs"]
+bg_color = Color(0.7936501, 0.091038086, 0, 1)
+border_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4fuuu"]
+bg_color = Color(0.10747976, 0.10747973, 0.10747973, 1)
+shadow_color = Color(0, 0, 0, 0.27450982)
+shadow_offset = Vector2(0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dxrkv"]
+bg_color = Color(0.35686275, 0.019607844, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_4fuuu"]
+font = ExtResource("3_h7iqs")
 
 [node name="Game" type="Node" unique_id=1260941905]
 script = ExtResource("1_vasa2")
@@ -15,6 +33,39 @@ script = ExtResource("1_vasa2")
 [node name="Crosshair" type="Sprite2D" parent="CanvasLayer" unique_id=800849479]
 texture = SubResource("AtlasTexture_feb5d")
 
-[node name="Label" type="Label" parent="CanvasLayer" unique_id=1761389643]
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="HealthBar" type="ProgressBar" parent="CanvasLayer" unique_id=656922417]
+z_index = 1
+offset_left = 16.0
+offset_top = 8.0
+offset_right = 136.0
+offset_bottom = 24.0
+theme_override_styles/background = SubResource("StyleBoxEmpty_vasa2")
+theme_override_styles/fill = SubResource("StyleBoxFlat_h7iqs")
+value = 50.0
+show_percentage = false
+
+[node name="DamageBar" type="ProgressBar" parent="CanvasLayer/HealthBar" unique_id=1287570250]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_4fuuu")
+theme_override_styles/fill = SubResource("StyleBoxFlat_dxrkv")
+value = 70.0
+show_percentage = false
+
+[node name="DamageBarTimer" type="Timer" parent="CanvasLayer/HealthBar" unique_id=198377768]
+wait_time = 0.4
+one_shot = true
+
+[node name="Label" type="Label" parent="CanvasLayer/HealthBar" unique_id=1867721234]
+layout_mode = 0
+offset_left = -16.0
+offset_bottom = 15.0
+text = "HP"
+label_settings = SubResource("LabelSettings_4fuuu")
+
+[connection signal="timeout" from="CanvasLayer/HealthBar/DamageBarTimer" to="." method="_on_damage_bar_timer_timeout"]
