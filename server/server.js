@@ -5,12 +5,10 @@ const crypto = require('crypto');
 const MAX_PEERS = 4096;
 const MAX_LOBBIES = 1024;
 
-// Render/Back4app injects the port via environment variables automatically.
 const PORT = Number.isInteger(Number.parseInt(process.env.PORT, 10))
 	? Number.parseInt(process.env.PORT, 10)
 	: 9081;
 
-// CLOUDFLARE CONFIGURATION: Add your keys to environment variables on your host!
 const CLOUDFLARE_TURN_KEY_ID = process.env.CF_TURN_KEY_ID || "your_turn_key_id_here";
 const CLOUDFLARE_TURN_KEY_SECRET = process.env.CF_TURN_KEY_SECRET || "your_turn_key_secret_here";
 
@@ -347,18 +345,29 @@ wss.on('connection', (ws) => {
 		}
 	});
 
-	ws.on('close', () => {
+	ws.on('close', (code, reason) => {
 		peersCount--;
-		if (peer.lobby) {
-			const lobby = lobbies.get(peer.lobby);
-			if (lobby) {
-				const isHostOut = lobby.leave(peer);
-				if (lobby.peers.length === 0 || isHostOut) {
-					lobbies.delete(peer.lobby);
-					console.log(`Lobby destroyed: ${peer.lobby}`);
-				}
-			}
+		console.log(`Connection with peer ${peer.id} closed `
+			+ `with reason ${code}: ${reason}`);
+		if (peer.lobby && lobbies.has(peer.lobby)
+			&& lobbies.get(peer.lobby).leave(peer)) {
+			lobbies.delete(peer.lobby);
+			console.log(`Deleted lobby ${peer.lobby}`);
+			console.log(`Open lobbies: ${lobbies.size}`);
+			peer.lobby = '';
 		}
-		clearTimeout(peer.timeout);
+		if (peer.timeout >= 0) {
+			clearTimeout(peer.timeout);
+			peer.timeout = -1;
+		}
+	});
+	ws.on('error', (error) => {
+		console.error(error);
 	});
 });
+
+const interval = setInterval(() => { // eslint-disable-line no-unused-vars
+	wss.clients.forEach((ws) => {
+		ws.ping();
+	});
+}, PING_INTERVAL);
