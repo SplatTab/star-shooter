@@ -87,14 +87,16 @@ function getCloudflareTurnCredentials() {
 
 	// Standard structural format required by WebRTCPeerConnection.initialize()
 	return [
-		{ urls: ["stun:://cloudflare.com"] },
-		{
-			urls: ["turn:://cloudflare.com?transport=udp"],
-			username: username,
-			credential: credential
+		{ 
+			urls: ["stun:stun.cloudflare.com:3478"] 
 		},
 		{
-			urls: ["turn:://cloudflare.com"],
+			// The browser will try these endpoints in order using these credentials
+			urls: [
+				"turn:turn.cloudflare.com:3478?transport=udp",
+				"turn:turn.cloudflare.com:3478?transport=tcp",
+				"turns:turn.cloudflare.com:5349?transport=tcp" // Encrypted fallback
+			],
 			username: username,
 			credential: credential
 		}

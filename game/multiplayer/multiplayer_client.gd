@@ -1,7 +1,7 @@
 extends "ws_webrtc_client.gd"
 
 # Update this endpoint string to point to your live deployment URL (Render, Back4app, etc.)
-const host := "wss://starshooter.ddns.net"
+const host := "wss://starshooter-7604gyw5.b4a.run"
 var rtc_mp := WebRTCMultiplayerPeer.new()
 var sealed: bool = false
 

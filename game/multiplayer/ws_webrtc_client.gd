@@ -18,7 +18,7 @@ enum Message {
 @export var mesh: bool = true  # Will use the lobby host as relay otherwise.
 
 # 2. Dynamic tracking array to store Cloudflare servers when received from backend
-var ice_servers_cache: Array = [ { "urls": ["stun:://google.com"] } ]
+var ice_servers_cache: Array = [ { "urls": ["stun:stun.l.google.com:19302"] } ]
 
 var ws := WebSocketPeer.new()
 var code := 1000
