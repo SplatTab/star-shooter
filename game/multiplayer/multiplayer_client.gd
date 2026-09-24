@@ -1,5 +1,6 @@
 extends "ws_webrtc_client.gd"
 
+# Update this endpoint string to point to your live deployment URL (Render, Back4app, etc.)
 const host := "wss://starshooter.ddns.net"
 var rtc_mp := WebRTCMultiplayerPeer.new()
 var sealed: bool = false
@@ -34,14 +35,14 @@ func stop() -> void:
 
 func _create_peer(id: int) -> WebRTCPeerConnection:
 	var peer: WebRTCPeerConnection = WebRTCPeerConnection.new()
-	# Use a public STUN server for moderate NAT traversal.
-	# Note that STUN cannot punch through strict NATs (such as most mobile connections),
-	# in which case TURN is required. TURN generally does not have public servers available,
-	# as it requires much greater resources to host (all traffic goes through
-	# the TURN server, instead of only performing the initial connection).
+	
+	# FIXED: Replaced the hardcoded Google STUN dictionary block.
+	# This now uses the ice_servers_cache array which was loaded from the base script
+	# the millisecond your Node.js backend sent the Cloudflare tokens over.
 	peer.initialize({
-		"iceServers": [ { "urls": ["stun:stun.l.google.com:19302"] } ]
+		"iceServers": ice_servers_cache
 	})
+	
 	peer.session_description_created.connect(_offer_created.bind(id))
 	peer.ice_candidate_created.connect(_new_ice_candidate.bind(id))
 	rtc_mp.add_peer(peer, id)

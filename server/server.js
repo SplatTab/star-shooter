@@ -1,4 +1,3 @@
-// Fixed Server code optimized for Render / Cloud deployments
 const http = require('http');
 const WebSocket = require('ws');
 const crypto = require('crypto');
@@ -6,11 +5,14 @@ const crypto = require('crypto');
 const MAX_PEERS = 4096;
 const MAX_LOBBIES = 1024;
 
-// 1. DYNAMIC PORT FIX: Render injects the port via environment variables.
-// Render requires you to bind to 0.0.0.0 (all interfaces), NOT 127.0.0.1.
+// Render/Back4app injects the port via environment variables automatically.
 const PORT = Number.isInteger(Number.parseInt(process.env.PORT, 10))
 	? Number.parseInt(process.env.PORT, 10)
 	: 9081;
+
+// CLOUDFLARE CONFIGURATION: Add your keys to environment variables on your host!
+const CLOUDFLARE_TURN_KEY_ID = process.env.CF_TURN_KEY_ID || "your_turn_key_id_here";
+const CLOUDFLARE_TURN_KEY_SECRET = process.env.CF_TURN_KEY_SECRET || "your_turn_key_secret_here";
 
 const ALFNUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -42,6 +44,7 @@ const CMD = {
 	CANDIDATE: 6,
 	SEAL: 7,
 	MIGRATE_HOST: 8,
+	ICE_CONFIG: 9, // Added new structural command key to pass to Godot
 };
 
 function randomInt(low, high) {
@@ -68,6 +71,36 @@ function ProtoMessage(type, id, data) {
 	});
 }
 
+/**
+ * Generates dynamic, short-lived TURN credentials for Cloudflare Realtime.
+ * Uses Time-As-Username tracking tracking spec (RFC 5766).
+ */
+function getCloudflareTurnCredentials() {
+	// Set expiration to 24 hours from right now (expressed in Unix epoch seconds)
+	const expiryUnixTime = Math.floor(Date.now() / 1000) + 86400;
+	const username = `${expiryUnixTime}:${CLOUDFLARE_TURN_KEY_ID}`;
+	
+	// Sign the token username utilizing standard HMAC-SHA1 encryption hashing
+	const hmac = crypto.createHmac('sha1', CLOUDFLARE_TURN_KEY_SECRET);
+	hmac.update(username);
+	const credential = hmac.digest('base64');
+
+	// Standard structural format required by WebRTCPeerConnection.initialize()
+	return [
+		{ urls: ["stun:://cloudflare.com"] },
+		{
+			urls: ["turn:://cloudflare.com?transport=udp"],
+			username: username,
+			credential: credential
+		},
+		{
+			urls: ["turn:://cloudflare.com"],
+			username: username,
+			credential: credential
+		}
+	];
+}
+
 const server = http.createServer((req, res) => {
 	res.writeHead(200, { 'Content-Type': 'text/plain' });
 	res.end('Hello WebRTC Server\n');
@@ -75,7 +108,6 @@ const server = http.createServer((req, res) => {
 
 const wss = new WebSocket.Server({ server });
 
-// 2. INTERFACE FIX: Changed from '127.0.0.1' to '0.0.0.0' and passed the dynamic PORT.
 server.listen(PORT, '0.0.0.0', () => {
 	console.log(`HTTP/WebSocket core wrapper running on interface 0.0.0.0:${PORT}`);
 });
@@ -226,7 +258,17 @@ function joinLobby(peer, pLobby, mesh) {
 	peer.lobby = lobbyName;
 	console.log(`Peer ${peer.id} joining lobby ${lobbyName} with ${lobby.peers.length} peers`);
 	lobby.join(peer);
+	
+	// Send confirmation message to client
 	peer.ws.send(ProtoMessage(CMD.JOIN, 0, lobbyName));
+
+	// FIREWALL TRAVERSAL: Inject secure short-lived Cloudflare credentials to the peer right after joining
+	try {
+		const iceServers = getCloudflareTurnCredentials();
+		peer.ws.send(ProtoMessage(CMD.ICE_CONFIG, 0, JSON.stringify(iceServers)));
+	} catch (err) {
+		console.error("Failed to generate Cloudflare configurations:", err.message);
+	}
 }
 
 function parseMsg(peer, msg) {
@@ -278,7 +320,6 @@ function parseMsg(peer, msg) {
 	throw new ProtoError(4000, STR_INVALID_CMD);
 }
 
-// 3. CLEANUP MANAGEMENT: Remove peers cleanly when connections are broken
 wss.on('connection', (ws) => {
 	if (peersCount >= MAX_PEERS) {
 		ws.close(4000, STR_TOO_MANY_PEERS);
@@ -289,7 +330,6 @@ wss.on('connection', (ws) => {
 	const peer = new Peer(id, ws);
 
 	ws.on('message', (message) => {
-		// Render may process stringified buffers natively
 		const messageString = Buffer.isBuffer(message) ? message.toString('utf8') : message;
 		
 		if (typeof messageString !== 'string') {

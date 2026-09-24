@@ -10,11 +10,15 @@ enum Message {
 	CANDIDATE,
 	SEAL,
 	MIGRATE_HOST,
+	ICE_CONFIG, # 1. Added type 9 matching your new Node.js server setup
 }
 
 @export var autojoin: bool = true
 @export var lobby: String = ""  # Will create a new lobby if empty.
 @export var mesh: bool = true  # Will use the lobby host as relay otherwise.
+
+# 2. Dynamic tracking array to store Cloudflare servers when received from backend
+var ice_servers_cache: Array = [ { "urls": ["stun:://google.com"] } ]
 
 var ws := WebSocketPeer.new()
 var code := 1000
@@ -70,7 +74,16 @@ func _parse_msg() -> bool:
 	var type := int(msg.type)
 	var src_id := int(msg.id)
 
-	if type == Message.ID:
+	# 3. INTERCEPT SERVER CONFIGURATIONS:
+	# Parse incoming Cloudflare network configurations and save them to memory immediately
+	if type == Message.ICE_CONFIG:
+		var parsed_ice = JSON.parse_string(msg.data)
+		if typeof(parsed_ice) == TYPE_ARRAY:
+			ice_servers_cache = parsed_ice
+			print("[Network] Cloudflare ICE/TURN configurations synced safely.")
+		return true # Intercepted and parsed successfully.
+
+	elif type == Message.ID:
 		connected.emit(src_id, msg.data == "true")
 	elif type == Message.JOIN:
 		lobby_joined.emit(msg.data)
