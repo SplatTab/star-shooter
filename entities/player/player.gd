@@ -7,6 +7,8 @@ var hp = BASE_HP
 var speed : float = SPEED
 var is_stunned: bool = false
 var is_dashing: bool = false
+const DASH_COOLDOWN := 0.5
+var dash_cooldown := 0.0
 var is_dead: bool = false
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var hand: Sprite2D = $Hand
@@ -83,10 +85,11 @@ func create_ghost() -> void:
 		ghost.queue_free()
 	)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not multiplayer.multiplayer_peer or not is_multiplayer_authority():
 		return  # Only process input on the authoritative instance
 	if is_dead: return
+	dash_cooldown = max(dash_cooldown - delta, 0)
 	var dirx := Input.get_axis("left", "right")
 	var diry := Input.get_axis("up", "down")
 	var direction = Vector2(dirx, diry).normalized()
@@ -100,7 +103,8 @@ func _physics_process(_delta: float) -> void:
 		if direction:
 			walking_particles.emitting = true
 			desired_animation = "walk_ad" if diry == 0 else "walk_s" if diry > 0 else "walk_w"
-			if do_dash:
+			if do_dash and dash_cooldown <= 0:
+				dash_cooldown = DASH_COOLDOWN
 				is_dashing = true
 				knockback_and_stun(direction * speed * 3, Color(1, 1, 0.5))
 			else:
