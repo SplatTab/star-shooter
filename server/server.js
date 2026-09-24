@@ -1,14 +1,17 @@
-// Server code from godot demo https://github.com/godotengine/godot-demo-projects/tree/master/networking/webrtc_signaling
-
+// Fixed Server code optimized for Render / Cloud deployments
 const http = require('http');
 const WebSocket = require('ws');
 const crypto = require('crypto');
 
 const MAX_PEERS = 4096;
 const MAX_LOBBIES = 1024;
+
+// 1. DYNAMIC PORT FIX: Render injects the port via environment variables.
+// Render requires you to bind to 0.0.0.0 (all interfaces), NOT 127.0.0.1.
 const PORT = Number.isInteger(Number.parseInt(process.env.PORT, 10))
 	? Number.parseInt(process.env.PORT, 10)
 	: 9081;
+
 const ALFNUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
 const NO_LOBBY_TIMEOUT = 1000;
@@ -30,15 +33,15 @@ const STR_TOO_MANY_PEERS = 'Too many peers connected';
 const STR_INVALID_TRANSFER_MODE = 'Invalid transfer mode, must be text';
 
 const CMD = {
-	JOIN: 0, // eslint-disable-line sort-keys
-	ID: 1, // eslint-disable-line sort-keys
-	PEER_CONNECT: 2, // eslint-disable-line sort-keys
-	PEER_DISCONNECT: 3, // eslint-disable-line sort-keys
-	OFFER: 4, // eslint-disable-line sort-keys
-	ANSWER: 5, // eslint-disable-line sort-keys
-	CANDIDATE: 6, // eslint-disable-line sort-keys
-	SEAL: 7, // eslint-disable-line sort-keys
-	MIGRATE_HOST: 8, // eslint-disable-line sort-keys
+	JOIN: 0,
+	ID: 1,
+	PEER_CONNECT: 2,
+	PEER_DISCONNECT: 3,
+	OFFER: 4,
+	ANSWER: 5,
+	CANDIDATE: 6,
+	SEAL: 7,
+	MIGRATE_HOST: 8,
 };
 
 function randomInt(low, high) {
@@ -71,7 +74,11 @@ const server = http.createServer((req, res) => {
 });
 
 const wss = new WebSocket.Server({ server });
-server.listen(9081, '127.0.0.1');
+
+// 2. INTERFACE FIX: Changed from '127.0.0.1' to '0.0.0.0' and passed the dynamic PORT.
+server.listen(PORT, '0.0.0.0', () => {
+	console.log(`HTTP/WebSocket core wrapper running on interface 0.0.0.0:${PORT}`);
+});
 
 wss.on('listening', () => {
 	console.log(`WebSocket signaling server listening on port ${PORT}`);
@@ -79,7 +86,7 @@ wss.on('listening', () => {
 
 wss.on('error', (err) => {
 	if (err.code === 'EADDRINUSE') {
-		console.error(`Port ${PORT} is already in use. Set PORT to another value and start the server again.`);
+		console.error(`Port ${PORT} is already in use. Set PORT to another value.`);
 		process.exit(1);
 	}
 	throw err;
@@ -97,7 +104,6 @@ class Peer {
 		this.id = id;
 		this.ws = ws;
 		this.lobby = '';
-		// Close connection after 1 sec if client has not joined a lobby
 		this.timeout = setTimeout(() => {
 			if (!this.lobby) {
 				ws.close(4000, STR_NO_LOBBY);
@@ -150,15 +156,14 @@ class Lobby {
 		const newLobby = randomSecret();
 
 		this.peers.forEach((p) => {
-			if (close) { // Room host disconnected, must close.
+			if (close) {
 				p.ws.send(ProtoMessage(CMD.MIGRATE_HOST, 1, newLobby));
-			} else { // Notify peer disconnect.
+			} else {
 				p.ws.send(ProtoMessage(CMD.PEER_DISCONNECT, assigned));
 			}
 		});
 		this.peers.splice(idx, 1);
 		if (close && this.closeTimer >= 0) {
-			// We are closing already.
 			clearTimeout(this.closeTimer);
 			this.closeTimer = -1;
 		}
@@ -166,7 +171,6 @@ class Lobby {
 	}
 
 	seal(peer) {
-		// Only host can seal
 		if (peer.id !== this.host) {
 			throw new ProtoError(4000, STR_ONLY_HOST_CAN_SEAL);
 		}
@@ -174,10 +178,8 @@ class Lobby {
 		this.peers.forEach((p) => {
 			p.ws.send(ProtoMessage(CMD.SEAL, 0));
 		});
-		console.log(`Peer ${peer.id} sealed lobby ${this.name} `
-			+ `with ${this.peers.length} peers`);
+		console.log(`Peer ${peer.id} sealed lobby ${this.name} with ${this.peers.length} peers`);
 		this.closeTimer = setTimeout(() => {
-			// Close peer connection to host (and thus the lobby)
 			this.peers.forEach((p) => {
 				p.ws.close(1000, STR_SEAL_COMPLETE);
 			});
@@ -190,15 +192,12 @@ let peersCount = 0;
 
 function joinLobby(peer, pLobby, mesh) {
 	let lobbyName = pLobby;
-	// Peer must not already be in a lobby
 	if (peer.lobby) {
 		throw new ProtoError(4000, STR_ALREADY_IN_LOBBY);
 	}
 
-	// Quick play joins an open lobby if possible, otherwise creates a new one.
 	if (lobbyName === 'quickPlay') {
 		lobbyName = '';
-		// Peer must not already be in a lobby
 		const openLobby = Array.from(lobbies.entries())
 			.find(([, lobby]) => !lobby.sealed && lobby.peers.length < MAX_PEERS);
 		if (openLobby) {
@@ -206,7 +205,6 @@ function joinLobby(peer, pLobby, mesh) {
 		}
 	}
 
-	// Either no lobbies so making one or players migrating to new lobby after host left, so making new lobby for them to join.
 	if (lobbyName === '') {
 		lobbyName = randomSecret();
 	}
@@ -226,8 +224,7 @@ function joinLobby(peer, pLobby, mesh) {
 		throw new ProtoError(4000, STR_LOBBY_IS_SEALED);
 	}
 	peer.lobby = lobbyName;
-	console.log(`Peer ${peer.id} joining lobby ${lobbyName} `
-		+ `with ${lobby.peers.length} peers`);
+	console.log(`Peer ${peer.id} joining lobby ${lobbyName} with ${lobby.peers.length} peers`);
 	lobby.join(peer);
 	peer.ws.send(ProtoMessage(CMD.JOIN, 0, lobbyName));
 }
@@ -248,7 +245,6 @@ function parseMsg(peer, msg) {
 		throw new ProtoError(4000, STR_INVALID_FORMAT);
 	}
 
-	// Lobby joining.
 	if (type === CMD.JOIN) {
 		joinLobby(peer, data, id === 0);
 		return;
@@ -262,26 +258,17 @@ function parseMsg(peer, msg) {
 		throw new ProtoError(4000, STR_SERVER_ERROR);
 	}
 
-	// Lobby sealing.
 	if (type === CMD.SEAL) {
 		lobby.seal(peer);
 		return;
 	}
 
-	// Message relaying format:
-	//
-	// {
-	//   "type": CMD.[OFFER|ANSWER|CANDIDATE],
-	//   "id": DEST_ID,
-	//   "data": PAYLOAD
-	// }
 	if (type === CMD.OFFER || type === CMD.ANSWER || type === CMD.CANDIDATE) {
 		let destId = id;
 		if (id === 1) {
 			destId = lobby.host;
 		}
 		const dest = lobby.peers.find((e) => e.id === destId);
-		// Dest is not in this room.
 		if (!dest) {
 			throw new ProtoError(4000, STR_INVALID_DEST);
 		}
@@ -291,6 +278,7 @@ function parseMsg(peer, msg) {
 	throw new ProtoError(4000, STR_INVALID_CMD);
 }
 
+// 3. CLEANUP MANAGEMENT: Remove peers cleanly when connections are broken
 wss.on('connection', (ws) => {
 	if (peersCount >= MAX_PEERS) {
 		ws.close(4000, STR_TOO_MANY_PEERS);
@@ -299,43 +287,36 @@ wss.on('connection', (ws) => {
 	peersCount++;
 	const id = randomId();
 	const peer = new Peer(id, ws);
+
 	ws.on('message', (message) => {
-		if (typeof message !== 'string') {
+		// Render may process stringified buffers natively
+		const messageString = Buffer.isBuffer(message) ? message.toString('utf8') : message;
+		
+		if (typeof messageString !== 'string') {
 			ws.close(4000, STR_INVALID_TRANSFER_MODE);
 			return;
 		}
 		try {
-			parseMsg(peer, message);
+			parseMsg(peer, messageString);
 		} catch (e) {
 			const code = e.code || 4000;
-			console.log(`Error parsing message from ${id}:\n${
-				message}`);
+			console.log(`Error parsing message from ${id}: ${e.message}`);
 			ws.close(code, e.message);
 		}
 	});
-	ws.on('close', (code, reason) => {
+
+	ws.on('close', () => {
 		peersCount--;
-		console.log(`Connection with peer ${peer.id} closed `
-			+ `with reason ${code}: ${reason}`);
-		if (peer.lobby && lobbies.has(peer.lobby)
-			&& lobbies.get(peer.lobby).leave(peer)) {
-			lobbies.delete(peer.lobby);
-			console.log(`Deleted lobby ${peer.lobby}`);
-			console.log(`Open lobbies: ${lobbies.size}`);
-			peer.lobby = '';
+		if (peer.lobby) {
+			const lobby = lobbies.get(peer.lobby);
+			if (lobby) {
+				const isHostOut = lobby.leave(peer);
+				if (lobby.peers.length === 0 || isHostOut) {
+					lobbies.delete(peer.lobby);
+					console.log(`Lobby destroyed: ${peer.lobby}`);
+				}
+			}
 		}
-		if (peer.timeout >= 0) {
-			clearTimeout(peer.timeout);
-			peer.timeout = -1;
-		}
-	});
-	ws.on('error', (error) => {
-		console.error(error);
+		clearTimeout(peer.timeout);
 	});
 });
-
-const interval = setInterval(() => { // eslint-disable-line no-unused-vars
-	wss.clients.forEach((ws) => {
-		ws.ping();
-	});
-}, PING_INTERVAL);
