@@ -24,6 +24,10 @@ var ws := WebSocketPeer.new()
 var code := 1000
 var reason: String = "Unknown"
 var old_state := WebSocketPeer.STATE_CLOSED
+@export var auto_reconnect: bool = true
+@export var reconnect_delay: float = 3.0
+var current_url: String = ""
+var reconnect_timer: float = 0.0
 
 signal lobby_joined(lobby: String)
 signal connected(id: int, use_mesh: bool)
@@ -38,17 +42,19 @@ signal lobby_sealed()
 
 
 func connect_to_url(url: String) -> void:
+	current_url = url
+	reconnect_timer = 0.0 # Reset timer on manual connect
 	close()
 	code = 1000
 	reason = "Unknown"
 	ws.connect_to_url(url)
 
 
+
 func close() -> void:
 	ws.close()
 
-
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	ws.poll()
 	var state := ws.get_ready_state()
 	if state != old_state and state == WebSocketPeer.STATE_OPEN and autojoin:
@@ -60,6 +66,15 @@ func _process(_delta: float) -> void:
 		code = ws.get_close_code()
 		reason = ws.get_close_reason()
 		disconnected.emit()
+
+	# Handle auto-reconnection when closed
+	if state == WebSocketPeer.STATE_CLOSED and auto_reconnect and current_url != "":
+		reconnect_timer += delta
+		if reconnect_timer >= reconnect_delay:
+			print("[Network] Attempting to reconnect to: ", current_url)
+			reconnect_timer = 0.0
+			ws.connect_to_url(current_url) # Retry connection
+
 	old_state = state
 
 
