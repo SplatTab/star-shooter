@@ -126,16 +126,73 @@ async function getCloudflareTurnCredentials() {
 			);
 		}
 
-		return data.iceServers;
+		const supportedIceServers = [];
+
+		for (const server of data.iceServers) {
+			const urls = Array.isArray(server.urls)
+				? server.urls
+				: [server.urls];
+
+			const supportedUrls = urls.filter((url) => {
+				if (typeof url !== 'string') {
+					return false;
+				}
+
+				// STUN is supported.
+				if (url.startsWith('stun:')) {
+					return true;
+				}
+
+				// Only allow UDP TURN.
+				if (url.startsWith('turn:')) {
+					return (
+						!url.includes('transport=tcp') &&
+						!url.includes('transport=tls')
+					);
+				}
+
+				// Reject turns: (TURN over TLS).
+				return false;
+			});
+
+			if (supportedUrls.length === 0) {
+				continue;
+			}
+
+			const filteredServer = {
+				urls: supportedUrls,
+			};
+
+			// TURN servers need their credentials.
+			if (server.username) {
+				filteredServer.username = server.username;
+			}
+
+			if (server.credential) {
+				filteredServer.credential = server.credential;
+			}
+
+			supportedIceServers.push(filteredServer);
+		}
+
+		if (supportedIceServers.length === 0) {
+			throw new Error(
+				'Cloudflare returned no STUN or UDP TURN servers supported by libjuice'
+			);
+		}
+
+		console.log(
+			`Cloudflare ICE: ${supportedIceServers.length} supported server entries`
+		);
+
+		return supportedIceServers;
+
 	} catch (err) {
 		console.error(
 			'Cloudflare REST API request failed, using STUN fallback:',
 			err.message
 		);
 
-		// STUN-only fallback.
-		// This will not provide TURN relay connectivity, but it
-		// allows direct ICE connectivity attempts to continue.
 		return [
 			{
 				urls: ['stun:stun.cloudflare.com:3478'],
