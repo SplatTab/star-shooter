@@ -20,6 +20,10 @@ enum Message {
 # 2. Dynamic tracking array to store Cloudflare servers when received from backend
 var ice_servers_cache: Array = [ { "urls": ["stun:stun.l.google.com:19302"] } ]
 
+# Structural guard flags to safely buffer early connection requests
+var ice_config_received: bool = false
+var pending_peer_connects: Array[int] = []
+
 var ws := WebSocketPeer.new()
 var code := 1000
 var reason: String = "Unknown"
@@ -47,8 +51,9 @@ func connect_to_url(url: String) -> void:
 	close()
 	code = 1000
 	reason = "Unknown"
+	ice_config_received = false
+	pending_peer_connects.clear()
 	ws.connect_to_url(url)
-
 
 
 func close() -> void:
@@ -89,13 +94,20 @@ func _parse_msg() -> bool:
 	var type := int(msg.type)
 	var src_id := int(msg.id)
 
-	# 3. INTERCEPT SERVER CONFIGURATIONS:
+	# INTERCEPT SERVER CONFIGURATIONS:
 	# Parse incoming Cloudflare network configurations and save them to memory immediately
 	if type == Message.ICE_CONFIG:
 		var parsed_ice = JSON.parse_string(msg.data)
 		if typeof(parsed_ice) == TYPE_ARRAY:
 			ice_servers_cache = parsed_ice
+			ice_config_received = true
 			print("[Network] Cloudflare ICE/TURN configurations synced safely.")
+			
+			# Flush any peer connections that were placed on hold
+			for peer_id in pending_peer_connects:
+				print("[Network] Processing deferred peer setup for ID: ", peer_id)
+				peer_connected.emit(peer_id)
+			pending_peer_connects.clear()
 		return true # Intercepted and parsed successfully.
 
 	elif type == Message.ID:
@@ -105,16 +117,19 @@ func _parse_msg() -> bool:
 	elif type == Message.SEAL:
 		lobby_sealed.emit()
 	elif type == Message.PEER_CONNECT:
-		# Client connected.
-		peer_connected.emit(src_id)
+		if ice_config_received:
+			peer_connected.emit(src_id)
+		else:
+			# Delay setting up the peer connection until the loop reads the credentials
+			print("[Network] Buffering peer connect for ID ", src_id, " (waiting for credentials...)")
+			pending_peer_connects.append(src_id)
 	elif type == Message.PEER_DISCONNECT:
-		# Client connected.
+		# Remove from buffered connections list if they left before credentials arrived
+		pending_peer_connects.erase(src_id)
 		peer_disconnected.emit(src_id)
 	elif type == Message.OFFER:
-		# Offer received.
 		offer_received.emit(src_id, msg.data)
 	elif type == Message.ANSWER:
-		# Answer received.
 		answer_received.emit(src_id, msg.data)
 	elif type == Message.CANDIDATE:
 		# Candidate received.

@@ -74,8 +74,9 @@ function ProtoMessage(type, id, data) {
  * Uses Time-As-Username tracking tracking spec (RFC 5766).
  */
 function getCloudflareTurnCredentials() {
-	// Set expiration to 24 hours from right now (expressed in Unix epoch seconds)
-	const expiryUnixTime = Math.floor(Date.now() / 1000) + 86400;
+	// Change 86400 to 3600
+	const expiryUnixTime = Math.floor(Date.now() / 1000) + 3600;
+
 	const username = `${expiryUnixTime}:${CLOUDFLARE_TURN_KEY_ID}`;
 	
 	// Sign the token username utilizing standard HMAC-SHA1 encryption hashing
