@@ -77,37 +77,33 @@ function ProtoMessage(type, id, data) {
  * Generates dynamic, short-lived TURN credentials for Cloudflare Realtime.
  * Fixed to support Cloudflare's exact Hex-Timestamp and hyphen requirements.
  */
-function getCloudflareTurnCredentials() {
-    // 1. Cloudflare limits lifetimes to 1 hour maximum (3600 seconds)
-    const expiryUnixTime = Math.floor(Date.now() / 1000) + 3600;
-    
-    // 2. CRITICAL FIX: Cloudflare requires the timestamp to be in HEXADECIMAL (base 16)
-    const expiryHex = expiryUnixTime.toString(16);
-    
-    // 3. CRITICAL FIX: Separation delimiter must be a hyphen (-) instead of a colon (:)
-    const username = `${expiryHex}-${CLOUDFLARE_TURN_KEY_ID}`;
-    
-    // 4. CRITICAL FIX: Read the API Secret Key as a Hex buffer rather than a plain string
-    const secretBuffer = Buffer.from(CLOUDFLARE_TURN_KEY_SECRET, 'hex');
-    
-    // Sign the token username using standard HMAC-SHA1 encryption hashing
-    const hmac = crypto.createHmac('sha1', secretBuffer);
-    hmac.update(username);
-    const credential = hmac.digest('base64');
+async function getCloudflareTurnCredentials() {
+    try {
+        const response = await fetch(
+            `https://rtc.live.cloudflare.com/v1/turn/keys/${CLOUDFLARE_TURN_KEY_ID}/credentials/generate-ice-servers`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${CLOUDFLARE_TURN_KEY_SECRET}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ttl: 3600 // Request a clean 1-hour expiration token
+                })
+            }
+        );
 
-    // Standard structural format required by WebRTCPeerConnection.initialize()
-    return [
-        { 
-            urls: ["stun:://cloudflare.com"] 
-        },
-        {
-            urls: [
-                "turn:://cloudflare.com",
-            ],
-            username: username,
-            credential: credential
-        }
-	];
+        const data = await response.json();
+        
+        // This endpoint automatically returns the full "iceServers" array 
+        // perfectly formatted for WebRTC engines!
+        return data.iceServers; 
+        
+    } catch (err) {
+        console.error("Cloudflare REST API request failed:", err.message);
+        // Fallback to local default STUN if the API behaves unexpectedly
+        return [{ "urls": ["stun:://google.com"] }];
+    }
 }
 
 const server = http.createServer((req, res) => {
