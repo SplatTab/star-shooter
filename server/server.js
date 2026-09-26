@@ -138,20 +138,19 @@ async function getCloudflareTurnCredentials() {
 					return false;
 				}
 
-				// STUN is supported.
+				// STUN is fine.
 				if (url.startsWith('stun:')) {
 					return true;
 				}
 
-				// Only allow UDP TURN.
-				if (url.startsWith('turn:')) {
-					return (
-						!url.includes('transport=tcp') &&
-						!url.includes('transport=tls')
-					);
+				// Only accept explicitly UDP TURN.
+				if (
+					url.startsWith('turn:') &&
+					url.includes('transport=udp')
+				) {
+					return true;
 				}
 
-				// Reject turns: (TURN over TLS).
 				return false;
 			});
 
@@ -163,7 +162,6 @@ async function getCloudflareTurnCredentials() {
 				urls: supportedUrls,
 			};
 
-			// TURN servers need their credentials.
 			if (server.username) {
 				filteredServer.username = server.username;
 			}
@@ -182,7 +180,8 @@ async function getCloudflareTurnCredentials() {
 		}
 
 		console.log(
-			`Cloudflare ICE: ${supportedIceServers.length} supported server entries`
+			'Supported ICE configuration:',
+			JSON.stringify(supportedIceServers)
 		);
 
 		return supportedIceServers;
