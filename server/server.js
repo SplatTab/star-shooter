@@ -73,30 +73,40 @@ function ProtoMessage(type, id, data) {
  * Generates dynamic, short-lived TURN credentials for Cloudflare Realtime.
  * Uses Time-As-Username tracking tracking spec (RFC 5766).
  */
+/**
+ * Generates dynamic, short-lived TURN credentials for Cloudflare Realtime.
+ * Fixed to support Cloudflare's exact Hex-Timestamp and hyphen requirements.
+ */
 function getCloudflareTurnCredentials() {
-	// Change 86400 to 3600
-	const expiryUnixTime = Math.floor(Date.now() / 1000) + 3600;
+    // 1. Cloudflare limits lifetimes to 1 hour maximum (3600 seconds)
+    const expiryUnixTime = Math.floor(Date.now() / 1000) + 3600;
+    
+    // 2. CRITICAL FIX: Cloudflare requires the timestamp to be in HEXADECIMAL (base 16)
+    const expiryHex = expiryUnixTime.toString(16);
+    
+    // 3. CRITICAL FIX: Separation delimiter must be a hyphen (-) instead of a colon (:)
+    const username = `${expiryHex}-${CLOUDFLARE_TURN_KEY_ID}`;
+    
+    // 4. CRITICAL FIX: Read the API Secret Key as a Hex buffer rather than a plain string
+    const secretBuffer = Buffer.from(CLOUDFLARE_TURN_KEY_SECRET, 'hex');
+    
+    // Sign the token username using standard HMAC-SHA1 encryption hashing
+    const hmac = crypto.createHmac('sha1', secretBuffer);
+    hmac.update(username);
+    const credential = hmac.digest('base64');
 
-	const username = `${expiryUnixTime}:${CLOUDFLARE_TURN_KEY_ID}`;
-	
-	// Sign the token username utilizing standard HMAC-SHA1 encryption hashing
-	const hmac = crypto.createHmac('sha1', CLOUDFLARE_TURN_KEY_SECRET);
-	hmac.update(username);
-	const credential = hmac.digest('base64');
-
-	// Standard structural format required by WebRTCPeerConnection.initialize()
-	return [
-		{ 
-			urls: ["stun:stun.cloudflare.com:3478"] 
-		},
-		{
-			// The browser will try these endpoints in order using these credentials
-			urls: [
-				"turn:turn.cloudflare.com:3478?transport=udp",
-			],
-			username: username,
-			credential: credential
-		}
+    // Standard structural format required by WebRTCPeerConnection.initialize()
+    return [
+        { 
+            urls: ["stun:://cloudflare.com"] 
+        },
+        {
+            urls: [
+                "turn:://cloudflare.com",
+            ],
+            username: username,
+            credential: credential
+        }
 	];
 }
 
