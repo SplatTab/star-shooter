@@ -21,6 +21,7 @@ func _init() -> void:
 
 func start(_lobby: String = "", url: String = host, _mesh: bool = true) -> void:
 	stop()
+	rtc_mp = WebRTCMultiplayerPeer.new()
 	sealed = false
 	mesh = _mesh
 	lobby = _lobby
