@@ -531,40 +531,36 @@ async function joinLobby(peer, pLobby, mesh) {
 	 */
 	peer.lobby = lobbyName;
 	peer.clearTimeout();
-
+	
 	console.log(
 		`Peer ${peer.id} joining lobby ${lobbyName} with ${lobby.peers.length} peers`
 	);
-
-	/*
-	 * Send ICE configuration before JOIN/PEER_CONNECT.
-	 * This ensures the client has its TURN configuration
-	 * before it creates WebRTC peers.
-	 */
+	
+	// Add the peer immediately so concurrent JOIN requests
+	// cannot both see an empty lobby.
+	lobby.join(peer);
+	
+	// Fetch ICE configuration after the peer has been registered.
 	const iceServers =
 		await getCloudflareTurnCredentials();
-
+	
 	if (peer.ws.readyState !== WebSocket.OPEN) {
 		return;
 	}
-
+	
 	sendMessage(
 		peer.ws,
 		CMD.ICE_CONFIG,
 		0,
 		JSON.stringify(iceServers)
 	);
-
-	// Tell client which lobby it joined.
+	
 	sendMessage(
 		peer.ws,
 		CMD.JOIN,
 		0,
 		lobbyName
 	);
-
-	// Finally announce the peer to the lobby.
-	lobby.join(peer);
 }
 
 
